@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  # ========================
+  # FRONTEND (Cargo Tracker)
+  # ========================
+  frontend:
+    # Use 'build: .' for local development or if building from a repo in Portainer
+    build: .
+    # If using a pre-built image from a registry, uncomment and use 'image' instead
+    # image: your-username/cargo-tracker:latest
+    container_name: cargo-tracker
+    restart: unless-stopped
+    networks:
+      - jhamfstack
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+      labels:
+        - traefik.enable=true
+        
+        # 🌐 FRONTEND HTTPS
+        # ADJUST THE HOSTNAME BELOW TO YOUR DESIRED DOMAIN
+        - traefik.http.routers.cargo-tracker.rule=Host(`transportes.regency.jhamf.com`)
+        - traefik.http.routers.cargo-tracker.entrypoints=websecure
+        - traefik.http.routers.cargo-tracker.tls=true
+        - traefik.http.routers.cargo-tracker.tls.certresolver=letsencryptresolver
+        - traefik.http.services.cargo-tracker.loadbalancer.server.port=80
+
+        # 🔁 Redirect HTTP → HTTPS
+        - traefik.http.routers.cargo-tracker-http.rule=Host(`transportes.regency.jhamf.com`)
+        - traefik.http.routers.cargo-tracker-http.entrypoints=web
+        - traefik.http.routers.cargo-tracker-http.middlewares=redirect-to-https
+        - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+        - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
+
+networks:
+  jhamfstack:
+    external: true
