@@ -2,15 +2,22 @@ version: "3.8"
 
 services:
   # ========================
-  # FRONTEND (Cargo Tracker)
+  # FRONTEND (Runtime Build)
   # ========================
   frontend:
-    # Use 'build: .' for local development or if building from a repo in Portainer
-    build: .
-    # If using a pre-built image from a registry, uncomment and use 'image' instead
-    # image: your-username/cargo-tracker:latest
-    container_name: cargo-tracker
-    restart: unless-stopped
+    image: node:20-alpine
+    working_dir: /app
+    # Estrategia de "Runtime Build" como en tu referencia:
+    # Clona el repo, instala dependencias y construye al iniciar el contenedor.
+    command: >
+      sh -c "
+      apk add --no-cache git &&
+      rm -rf ./* &&
+      git clone https://github.com/alejandroqui/transportes-modular.git . &&
+      npm install &&
+      npm run build &&
+      npx serve -s dist -l 80
+      "
     networks:
       - jhamfstack
     deploy:
@@ -19,15 +26,17 @@ services:
       placement:
         constraints:
           - node.role == manager
+      # Restart policy compatible con Swarm
+      restart_policy:
+        condition: on-failure
       resources:
         limits:
           cpus: "0.5"
-          memory: 512M
+          memory: 1024M
       labels:
         - traefik.enable=true
         
         # 🌐 FRONTEND HTTPS
-        # ADJUST THE HOSTNAME BELOW TO YOUR DESIRED DOMAIN
         - traefik.http.routers.cargo-tracker.rule=Host(`transportes.regency.jhamf.com`)
         - traefik.http.routers.cargo-tracker.entrypoints=websecure
         - traefik.http.routers.cargo-tracker.tls=true
