@@ -22,6 +22,7 @@ export function Expenses() {
         { value: 'Mecánico', label: 'Mantenimiento / Mecánico' },
         { value: 'Peajes', label: 'Peajes' },
         { value: 'Alimentación', label: 'Alimentación' },
+        { value: 'Pago', label: 'Pago Conductor' },
         { value: 'Otros', label: 'Otros' },
     ];
 
